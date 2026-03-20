@@ -1,60 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import './App.css';
+import { useApp } from './contexts/AppContext';
+import { 
+  CheckCircle, 
+  Calendar as CalendarIcon, 
+  FileText, 
+  Activity, 
+  User 
+} from 'lucide-react';
+
+// Components
 import TodoForm from './components/TodoForm';
 import TodoList from './components/TodoList';
 import FilterButtons from './components/FilterButtons';
 import Stats from './components/Stats';
+import ActivityFeed from './components/ActivityFeed';
+import Calendar from './components/Calendar';
+import FileShare from './components/FileShare';
+import UserList from './components/UserList';
 
 function App() {
-  const [todos, setTodos] = useState([]);
-  const [filter, setFilter] = useState('all');
+  const { 
+    user, loading, currentTab, setCurrentTab, 
+    todos, filter, setFilter, 
+    toggleTodo, deleteTodo, editTodo, addTodo 
+  } = useApp();
 
-  // Load todos from localStorage on initial render
-  useEffect(() => {
-    const savedTodos = JSON.parse(localStorage.getItem('todos'));
-    if (savedTodos && savedTodos.length > 0) {
-      setTodos(savedTodos);
-    }
-  }, []);
-
-  // Save todos to localStorage whenever todos change
-  useEffect(() => {
-    localStorage.setItem('todos', JSON.stringify(todos));
-  }, [todos]);
-
-  const addTodo = (text) => {
-    const newTodo = {
-      id: Date.now(),
-      text,
-      completed: false,
-      createdAt: new Date().toISOString()
-    };
-    setTodos([...todos, newTodo]);
-  };
-
-  const toggleTodo = (id) => {
-    setTodos(
-      todos.map(todo =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo
-      )
-    );
-  };
-
-  const deleteTodo = (id) => {
-    setTodos(todos.filter(todo => todo.id !== id));
-  };
-
-  const editTodo = (id, newText) => {
-    setTodos(
-      todos.map(todo =>
-        todo.id === id ? { ...todo, text: newText } : todo
-      )
-    );
-  };
-
-  const clearCompleted = () => {
-    setTodos(todos.filter(todo => !todo.completed));
-  };
+  if (loading) return (
+    <div className="loading-screen">
+      <div className="loader"></div>
+      <h2>Initializing Workspace...</h2>
+    </div>
+  );
 
   const filteredTodos = todos.filter(todo => {
     if (filter === 'active') return !todo.completed;
@@ -63,32 +40,58 @@ function App() {
   });
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Todo App</h1>
-        <p>Get things done, one task at a time</p>
-      </header>
-      
-      <main className="App-main">
-        <TodoForm addTodo={addTodo} />
-        <Stats todos={todos} />
-        <FilterButtons filter={filter} setFilter={setFilter} />
-        <TodoList
-          todos={filteredTodos}
-          toggleTodo={toggleTodo}
-          deleteTodo={deleteTodo}
-          editTodo={editTodo}
-        />
-        {todos.length > 0 && (
-          <button onClick={clearCompleted} className="clear-btn">
-            Clear Completed
-          </button>
-        )}
+    <div className="dashboard-container">
+      <nav className="sidebar">
+        <div className="sidebar-header">
+          <h2>TaskFlow</h2>
+        </div>
+        
+        <ul className="nav-links">
+          <li className={currentTab === 'todos' ? 'active' : ''} onClick={() => setCurrentTab('todos')}>
+            <CheckCircle size={20} /> <span>Tasks</span>
+          </li>
+          <li className={currentTab === 'calendar' ? 'active' : ''} onClick={() => setCurrentTab('calendar')}>
+            <CalendarIcon size={20} /> <span>Calendar</span>
+          </li>
+          <li className={currentTab === 'files' ? 'active' : ''} onClick={() => setCurrentTab('files')}>
+            <FileText size={20} /> <span>Files</span>
+          </li>
+          <li className={currentTab === 'activity' ? 'active' : ''} onClick={() => setCurrentTab('activity')}>
+            <Activity size={20} /> <span>Activity</span>
+          </li>
+        </ul>
+
+        <div className="user-profile">
+          <User size={18} />
+          <span>{user ? (user.displayName || user.email) : "Guest User"}</span>
+        </div>
+      </nav>
+
+      <main className="main-content">
+        <header className="content-header">
+          <h1>{currentTab.toUpperCase()}</h1>
+          <button className="btn-primary" onClick={() => window.location.reload()}>Refresh Sync</button>
+        </header>
+
+        <section className="content-body">
+          {currentTab === 'todos' && (
+            <div className="todo-view">
+              <TodoForm addTodo={addTodo} />
+              <Stats todos={todos} />
+              <FilterButtons filter={filter} setFilter={setFilter} />
+              <TodoList todos={filteredTodos} toggleTodo={toggleTodo} deleteTodo={deleteTodo} editTodo={editTodo} />
+            </div>
+          )}
+
+          {currentTab === 'calendar' && <Calendar />}
+          {currentTab === 'files' && <FileShare />}
+          {currentTab === 'activity' && <ActivityFeed />}
+        </section>
       </main>
-      
-      <footer className="App-footer">
-        <p>Drag and drop to reorder list</p>
-      </footer>
+
+      <aside className="presence-panel">
+        <UserList />
+      </aside>
     </div>
   );
 }

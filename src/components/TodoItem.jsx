@@ -17,7 +17,7 @@ const TodoItem = ({ todo, toggleTodo, deleteTodo, editTodo, isEditing, setEditin
         <input
           type="checkbox"
           checked={todo.completed}
-          onChange={() => toggleTodo(todo.id)}
+          onChange={() => toggleTodo(todo.id, todo.completed)}
           className="todo-checkbox"
         />
         
@@ -31,13 +31,7 @@ const TodoItem = ({ todo, toggleTodo, deleteTodo, editTodo, isEditing, setEditin
               autoFocus
             />
             <button type="submit" className="save-btn">Save</button>
-            <button 
-              type="button" 
-              className="cancel-btn"
-              onClick={() => setEditingId(null)}
-            >
-              Cancel
-            </button>
+            <button type="button" onClick={() => setEditingId(null)} className="cancel-btn">Cancel</button>
           </form>
         ) : (
           <>
@@ -45,27 +39,17 @@ const TodoItem = ({ todo, toggleTodo, deleteTodo, editTodo, isEditing, setEditin
               {todo.text}
             </span>
             <div className="todo-actions">
-              <button 
-                onClick={() => setEditingId(todo.id)} 
-                className="edit-btn"
-                title="Edit"
-              >
-                ✏️
-              </button>
-              <button 
-                onClick={() => deleteTodo(todo.id)} 
-                className="delete-btn"
-                title="Delete"
-              >
-                🗑️
-              </button>
+              <button onClick={() => setEditingId(todo.id)} className="edit-btn">✏️</button>
+              <button onClick={() => deleteTodo(todo.id)} className="delete-btn">🗑️</button>
             </div>
           </>
         )}
       </div>
-      <div className="todo-date">
-        Added: {new Date(todo.createdAt).toLocaleDateString()}
-      </div>
+      {todo.createdAt && (
+        <div className="todo-date">
+          {new Date(todo.createdAt).toLocaleDateString()}
+        </div>
+      )}
     </div>
   );
 };

@@ -7,7 +7,7 @@ const TodoList = ({ todos, toggleTodo, deleteTodo, editTodo }) => {
   if (todos.length === 0) {
     return (
       <div className="todo-list empty">
-        <p>No tasks found. Add a new task above!</p>
+        <p>No tasks found for this filter.</p>
       </div>
     );
   }

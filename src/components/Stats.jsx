@@ -8,16 +8,16 @@ const Stats = ({ todos }) => {
   return (
     <div className="stats">
       <div className="stat-item">
-        <span className="stat-label">Total:</span>
+        <span className="stat-label">Total</span>
         <span className="stat-value">{total}</span>
       </div>
       <div className="stat-item">
-        <span className="stat-label">Completed:</span>
-        <span className="stat-value">{completed}</span>
+        <span className="stat-label">Completed</span>
+        <span className="stat-value text-success">{completed}</span>
       </div>
       <div className="stat-item">
-        <span className="stat-label">Remaining:</span>
-        <span className="stat-value">{remaining}</span>
+        <span className="stat-label">Remaining</span>
+        <span className="stat-value text-primary">{remaining}</span>
       </div>
     </div>
   );
