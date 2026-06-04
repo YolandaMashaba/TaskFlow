@@ -1,13 +1,21 @@
 import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import './App.css';
-import { useApp } from './contexts/AppContext';
+import { AppProvider, useApp } from './contexts/AppContext';
 import { 
   CheckCircle, 
   Calendar as CalendarIcon, 
   FileText, 
   Activity, 
-  User 
+  User,
+  Share2,
+  LogOut
 } from 'lucide-react';
+
+// Pages
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Workspace from './pages/Workspace';
 
 // Components
 import TodoForm from './components/TodoForm';
@@ -19,12 +27,14 @@ import Calendar from './components/Calendar';
 import FileShare from './components/FileShare';
 import UserList from './components/UserList';
 
-function App() {
+function Dashboard() {
   const { 
     user, loading, currentTab, setCurrentTab, 
     todos, filter, setFilter, 
-    toggleTodo, deleteTodo, editTodo, addTodo 
+    toggleTodo, deleteTodo, editTodo, addTodo,
+    workspaceId, workspaceName, logout
   } = useApp();
+  const location = useLocation();
 
   if (loading) return (
     <div className="loading-screen">
@@ -33,17 +43,32 @@ function App() {
     </div>
   );
 
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!workspaceId) {
+    return <Navigate to="/workspace" replace />;
+  }
+
   const filteredTodos = todos.filter(todo => {
     if (filter === 'active') return !todo.completed;
     if (filter === 'completed') return todo.completed;
     return true;
   });
 
+  const shareWorkspaceLink = () => {
+    const shareUrl = `${window.location.origin}/workspace?workspace=${workspaceId}`;
+    navigator.clipboard.writeText(shareUrl);
+    alert('Workspace link copied to clipboard!');
+  };
+
   return (
     <div className="dashboard-container">
       <nav className="sidebar">
         <div className="sidebar-header">
           <h2>TaskFlow</h2>
+          <span className="workspace-name">{workspaceName}</span>
         </div>
         
         <ul className="nav-links">
@@ -61,9 +86,20 @@ function App() {
           </li>
         </ul>
 
+        <div className="sidebar-actions">
+          <button onClick={shareWorkspaceLink} className="sidebar-action-btn">
+            <Share2 size={16} />
+            <span>Share Workspace</span>
+          </button>
+          <button onClick={logout} className="sidebar-action-btn logout-action">
+            <LogOut size={16} />
+            <span>Sign Out</span>
+          </button>
+        </div>
+
         <div className="user-profile">
           <User size={18} />
-          <span>{user ? (user.displayName || user.email) : "Guest User"}</span>
+          <span>{user.displayName || user.email?.split('@')[0]}</span>
         </div>
       </nav>
 
@@ -77,8 +113,10 @@ function App() {
           {currentTab === 'todos' && (
             <div className="todo-view">
               <TodoForm addTodo={addTodo} />
-              <Stats todos={todos} />
-              <FilterButtons filter={filter} setFilter={setFilter} />
+              <div className="todo-controls-row">
+                <Stats todos={todos} />
+                <FilterButtons filter={filter} setFilter={setFilter} />
+              </div>
               <TodoList todos={filteredTodos} toggleTodo={toggleTodo} deleteTodo={deleteTodo} editTodo={editTodo} />
             </div>
           )}
@@ -93,6 +131,22 @@ function App() {
         <UserList />
       </aside>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/workspace" element={<Workspace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/" element={<Navigate to="/workspace" replace />} />
+        </Routes>
+      </AppProvider>
+    </Router>
   );
 }
 
