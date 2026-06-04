@@ -10,7 +10,9 @@ import {
   deleteDoc, 
   updateDoc,
   getDoc,
-  arrayUnion
+  getDocs,
+  arrayUnion,
+  where
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, listAll } from 'firebase/storage';
 import { auth, db, storage } from '../firebase';
@@ -34,6 +36,7 @@ export const AppProvider = ({ children }) => {
   const [files, setFiles] = useState([]);
   const [filter, setFilter] = useState('all');
   const [workspaceName, setWorkspaceName] = useState('');
+  const [userWorkspaces, setUserWorkspaces] = useState([]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -186,13 +189,95 @@ export const AppProvider = ({ children }) => {
     await signOut(auth);
     setWorkspaceId(null);
     setWorkspaceName('');
+    setUserWorkspaces([]);
+  };
+
+  const fetchUserWorkspaces = useCallback(async () => {
+    if (!user) return [];
+    
+    try {
+      const q = query(collection(db, 'workspaces'), where('members', 'array-contains', user.uid));
+      const querySnapshot = await getDocs(q);
+      const workspaces = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setUserWorkspaces(workspaces);
+      return workspaces;
+    } catch (error) {
+      console.error('Error fetching user workspaces:', error);
+      return [];
+    }
+  }, [user]);
+
+  const deleteWorkspace = async (workspaceIdToDelete) => {
+    if (!user) return false;
+    
+    try {
+      // Check if user is the creator
+      const workspaceDoc = await getDoc(doc(db, 'workspaces', workspaceIdToDelete));
+      if (!workspaceDoc.exists()) return false;
+      
+      const workspaceData = workspaceDoc.data();
+      if (workspaceData.createdBy !== user.uid) {
+        console.error('Only workspace creator can delete workspace');
+        return false;
+      }
+
+      await deleteDoc(doc(db, 'workspaces', workspaceIdToDelete));
+      
+      // Refresh the workspaces list
+      await fetchUserWorkspaces();
+      
+      // If the deleted workspace was the current one, clear it
+      if (workspaceId === workspaceIdToDelete) {
+        setWorkspaceId(null);
+        setWorkspaceName('');
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error deleting workspace:', error);
+      return false;
+    }
+  };
+
+  const leaveWorkspace = async () => {
+    if (!user || !workspaceId) return false;
+    
+    try {
+      const workspaceDoc = await getDoc(doc(db, 'workspaces', workspaceId));
+      if (!workspaceDoc.exists()) return false;
+      
+      const workspaceData = workspaceDoc.data();
+      
+      // If user is the creator, they should delete instead of leave
+      if (workspaceData.createdBy === user.uid) {
+        console.error('Workspace creator cannot leave, must delete instead');
+        return false;
+      }
+
+      // Remove user from members array
+      const updatedMembers = workspaceData.members.filter(memberId => memberId !== user.uid);
+      await updateDoc(doc(db, 'workspaces', workspaceId), {
+        members: updatedMembers
+      });
+
+      setWorkspaceId(null);
+      setWorkspaceName('');
+      
+      return true;
+    } catch (error) {
+      console.error('Error leaving workspace:', error);
+      return false;
+    }
   };
 
   const value = {
     user, loading, workspaceId, setWorkspaceId, workspaceName, currentTab, setCurrentTab,
-    todos, filter, setFilter, activity, events, files,
+    todos, filter, setFilter, activity, events, files, userWorkspaces,
     addTodo, toggleTodo, deleteTodo, editTodo, uploadFile, fetchFiles, logActivity,
-    createWorkspace, joinWorkspace, logout
+    createWorkspace, joinWorkspace, logout, fetchUserWorkspaces, deleteWorkspace, leaveWorkspace
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

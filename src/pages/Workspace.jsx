@@ -1,25 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
-import { Plus, Link2, Users, ArrowRight, LogOut } from 'lucide-react';
+import { Plus, Link2, Users, ArrowRight, LogOut, FolderOpen, Trash2 } from 'lucide-react';
+import AlertModal from '../components/AlertModal';
 
 const Workspace = () => {
-  const { user, workspaceId, workspaceName, createWorkspace, joinWorkspace, logout } = useApp();
+  const { user, workspaceId, workspaceName, createWorkspace, joinWorkspace, logout, fetchUserWorkspaces, userWorkspaces, deleteWorkspace, setWorkspaceId, setWorkspaceName } = useApp();
   const [newWorkspaceName, setNewWorkspaceName] = useState('');
   const [joinWorkspaceId, setJoinWorkspaceId] = useState('');
   const [createLoading, setCreateLoading] = useState(false);
   const [joinLoading, setJoinLoading] = useState(false);
   const [autoJoinLoading, setAutoJoinLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [createError, setCreateError] = useState('');
+  const [joinError, setJoinError] = useState('');
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  
+  // Alert modal state
+  const [alertModal, setAlertModal] = useState({
+    isOpen: false,
+    type: 'confirm',
+    title: '',
+    message: '',
+    onConfirm: null
+  });
 
   // Check if user is coming from a shared link
   const sharedWorkspaceId = searchParams.get('workspace');
 
+  // Fetch user's workspaces on mount
+  useEffect(() => {
+    if (user) {
+      fetchUserWorkspaces();
+    }
+  }, [user, fetchUserWorkspaces]);
+
   const handleCreateWorkspace = async (e) => {
     e.preventDefault();
-    setError('');
+    setCreateError('');
     setCreateLoading(true);
 
     try {
@@ -29,19 +47,19 @@ const Workspace = () => {
       if (id) {
         navigate('/dashboard');
       } else {
-        setError('Failed to create workspace - no ID returned');
+        setCreateError('Failed to create workspace - no ID returned');
         setCreateLoading(false);
       }
     } catch (err) {
       console.error('Workspace creation error:', err);
-      setError(err.message || 'Failed to create workspace');
+      setCreateError(err.message || 'Failed to create workspace');
       setCreateLoading(false);
     }
   };
 
   const handleJoinWorkspace = async (e) => {
     if (e) e.preventDefault();
-    setError('');
+    setJoinError('');
     setJoinLoading(true);
 
     try {
@@ -49,14 +67,47 @@ const Workspace = () => {
       if (success) {
         navigate('/dashboard');
       } else {
-        setError('Invalid workspace ID or workspace does not exist');
+        setJoinError('Invalid workspace ID or workspace does not exist');
       }
     } catch (err) {
-      setError(err.message);
+      setJoinError(err.message || 'Invalid workspace ID or workspace does not exist');
     } finally {
       setJoinLoading(false);
       setAutoJoinLoading(false);
     }
+  };
+
+  const handleSelectWorkspace = async (workspace) => {
+    const success = await joinWorkspace(workspace.id);
+    if (success) {
+      navigate('/dashboard');
+    }
+  };
+
+  const handleDeleteWorkspace = async (e, workspaceIdToDelete) => {
+    e.stopPropagation();
+    setAlertModal({
+      isOpen: true,
+      type: 'confirm',
+      title: 'Delete Workspace',
+      message: 'Are you sure you want to delete this workspace? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        const success = await deleteWorkspace(workspaceIdToDelete);
+        if (!success) {
+          setAlertModal({
+            isOpen: true,
+            type: 'alert',
+            title: 'Delete Failed',
+            message: 'Failed to delete workspace. Only the workspace creator can delete it.',
+            confirmText: 'OK',
+            onConfirm: null
+          });
+        }
+        setAlertModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const handleLogout = async () => {
@@ -65,7 +116,7 @@ const Workspace = () => {
   };
 
   // Auto-join if workspace ID is in URL
-  React.useEffect(() => {
+  useEffect(() => {
     if (sharedWorkspaceId && user && !workspaceId && !autoJoinLoading) {
       setAutoJoinLoading(true);
       handleJoinWorkspace(null);
@@ -111,7 +162,7 @@ const Workspace = () => {
             <p>Start a new collaborative workspace for your team</p>
             
             <form onSubmit={handleCreateWorkspace} className="workspace-form">
-              {error && <div className="workspace-error">{error}</div>}
+              {createError && <div className="workspace-error">{createError}</div>}
               <input
                 type="text"
                 value={newWorkspaceName}
@@ -136,6 +187,7 @@ const Workspace = () => {
             <p>Enter a workspace ID to join an existing team</p>
             
             <form onSubmit={handleJoinWorkspace} className="workspace-form">
+              {joinError && <div className="workspace-error">{joinError}</div>}
               <input
                 type="text"
                 value={joinWorkspaceId}
@@ -151,7 +203,40 @@ const Workspace = () => {
             </form>
           </div>
         </div>
+
+        {userWorkspaces.length > 0 && (
+          <div className="existing-workspaces">
+            <h2>Your Workspaces</h2>
+            <div className="workspaces-grid">
+              {userWorkspaces.map(workspace => (
+                <div key={workspace.id} className="workspace-card" onClick={() => handleSelectWorkspace(workspace)}>
+                  <button 
+                    className="delete-workspace-btn" 
+                    onClick={(e) => handleDeleteWorkspace(e, workspace.id)}
+                    title="Delete workspace"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                  <FolderOpen size={32} className="workspace-card-icon" />
+                  <h3>{workspace.name}</h3>
+                  <p>ID: {workspace.id}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+      
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={alertModal.onConfirm}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+        confirmText={alertModal.confirmText}
+        cancelText={alertModal.cancelText}
+      />
     </div>
   );
 };
