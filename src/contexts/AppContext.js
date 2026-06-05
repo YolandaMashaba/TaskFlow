@@ -135,15 +135,38 @@ export const AppProvider = ({ children }) => {
     return true;
   };
 
-  const addTodo = async (text) => {
+  const addTodo = async (text, assignees = [], dueDate = null, description = '') => {
     if (!workspaceId) return;
-    await setDoc(doc(db, `workspaces/${workspaceId}/todos`, Date.now().toString()), {
+    const todoId = Date.now().toString();
+    const todoData = {
       text,
       completed: false,
       createdAt: new Date().toISOString(),
-      createdBy: user.uid
-    });
+      createdBy: user.uid,
+      status: 'todo', // todo, in-progress, done
+      assignees: Array.isArray(assignees) ? assignees : [],
+      dueDate: dueDate,
+      description: description
+    };
+    
+    await setDoc(doc(db, `workspaces/${workspaceId}/todos`, todoId), todoData);
     logActivity('added a task', { text });
+    
+    // Create calendar event if due date is set
+    if (dueDate) {
+      const assigneeNames = Array.isArray(assignees) ? assignees.join(', ') : '';
+      await setDoc(doc(db, `workspaces/${workspaceId}/events`, `todo-${todoId}`), {
+        title: text,
+        start: dueDate,
+        end: dueDate,
+        allDay: true,
+        createdBy: user.uid,
+        assignee: assigneeNames,
+        todoId: todoId,
+        isTodoEvent: true,
+        description: description
+      });
+    }
   };
 
   const toggleTodo = async (id) => {
@@ -154,16 +177,47 @@ export const AppProvider = ({ children }) => {
     logActivity(todo.completed ? 'reopened a task' : 'completed a task');
   };
 
+  const updateTodoStatus = async (id, status) => {
+    if (!workspaceId) return;
+    await updateDoc(doc(db, `workspaces/${workspaceId}/todos`, id), { status });
+    logActivity(`moved a task to ${status}`);
+  };
+
   const deleteTodo = async (id) => {
     if (!workspaceId) return;
     await deleteDoc(doc(db, `workspaces/${workspaceId}/todos`, id));
     logActivity('deleted a task');
   };
 
-  const editTodo = async (id, newText) => {
+  const editTodo = async (id, newText, assignees = [], dueDate = null, description = '') => {
     if (!workspaceId) return;
-    await updateDoc(doc(db, `workspaces/${workspaceId}/todos`, id), { text: newText });
+    const updateData = { text: newText };
+    if (assignees !== undefined) updateData.assignees = Array.isArray(assignees) ? assignees : (assignees ? [assignees] : []);
+    if (dueDate !== undefined) updateData.dueDate = dueDate;
+    if (description !== undefined) updateData.description = description;
+    
+    await updateDoc(doc(db, `workspaces/${workspaceId}/todos`, id), updateData);
     logActivity('edited a task');
+    
+    // Update or create calendar event
+    const todo = todos.find(t => t.id === id);
+    if (dueDate) {
+      const assigneeNames = Array.isArray(assignees) ? assignees.join(', ') : (assignees || '');
+      await setDoc(doc(db, `workspaces/${workspaceId}/events`, `todo-${id}`), {
+        title: newText || todo?.text,
+        start: dueDate,
+        end: dueDate,
+        allDay: true,
+        createdBy: user.uid,
+        assignee: assigneeNames,
+        todoId: id,
+        isTodoEvent: true,
+        description: description
+      }, { merge: true });
+    } else if (todo?.dueDate && !dueDate) {
+      // Remove calendar event if due date is removed
+      await deleteDoc(doc(db, `workspaces/${workspaceId}/events`, `todo-${id}`));
+    }
   };
 
   const fetchFiles = useCallback(async () => {
@@ -277,7 +331,7 @@ export const AppProvider = ({ children }) => {
     user, loading, workspaceId, setWorkspaceId, workspaceName, currentTab, setCurrentTab,
     todos, filter, setFilter, activity, events, files, userWorkspaces,
     addTodo, toggleTodo, deleteTodo, editTodo, uploadFile, fetchFiles, logActivity,
-    createWorkspace, joinWorkspace, logout, fetchUserWorkspaces, deleteWorkspace, leaveWorkspace
+    createWorkspace, joinWorkspace, logout, fetchUserWorkspaces, deleteWorkspace, leaveWorkspace, updateTodoStatus
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

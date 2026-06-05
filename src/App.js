@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import './App.css';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { 
@@ -29,6 +29,7 @@ import Calendar from './components/Calendar';
 import FileShare from './components/FileShare';
 import UserList from './components/UserList';
 import AlertModal from './components/AlertModal';
+import TrelloBoard from './components/TrelloBoard';
 import { X } from 'lucide-react';
 
 function Dashboard() {
@@ -39,6 +40,7 @@ function Dashboard() {
     workspaceId, workspaceName, logout, leaveWorkspace
   } = useApp();
   const location = useLocation();
+  const navigate = useNavigate();
   
   // Alert modal state
   const [alertModal, setAlertModal] = React.useState({
@@ -208,12 +210,8 @@ function Dashboard() {
         <section className="content-body">
           {currentTab === 'todos' && (
             <div className="todo-view">
-              <TodoForm addTodo={addTodo} />
-              <div className="todo-controls-row">
-                <Stats todos={todos} />
-                <FilterButtons filter={filter} setFilter={setFilter} />
-              </div>
-              <TodoList todos={filteredTodos} toggleTodo={toggleTodo} deleteTodo={deleteTodo} editTodo={editTodo} />
+              <TodoForm />
+              <TrelloBoard />
             </div>
           )}
 
