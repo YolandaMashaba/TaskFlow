@@ -14,8 +14,7 @@ import {
   arrayUnion,
   where
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, listAll } from 'firebase/storage';
-import { auth, db, storage } from '../firebase';
+import { auth, db } from '../firebase';
 
 const AppContext = createContext();
 
@@ -33,7 +32,6 @@ export const AppProvider = ({ children }) => {
   const [todos, setTodos] = useState([]);
   const [activity, setActivity] = useState([]);
   const [events, setEvents] = useState([]);
-  const [files, setFiles] = useState([]);
   const [filter, setFilter] = useState('all');
   const [workspaceName, setWorkspaceName] = useState('');
   const [userWorkspaces, setUserWorkspaces] = useState([]);
@@ -95,6 +93,14 @@ export const AppProvider = ({ children }) => {
       const newWorkspaceId = Date.now().toString();
       console.log('Creating workspace with ID:', newWorkspaceId);
       
+      // Store user data in Firestore users collection
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName || user.email?.split('@')[0],
+        photoURL: user.photoURL
+      }, { merge: true });
+      
       await setDoc(doc(db, 'workspaces', newWorkspaceId), {
         name: name || 'My Workspace',
         createdBy: user.uid,
@@ -113,22 +119,59 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const joinWorkspace = async (workspaceIdToJoin) => {
+  const joinWorkspace = async (workspaceIdentifier) => {
     if (!user) return false;
 
-    const workspaceDoc = await getDoc(doc(db, 'workspaces', workspaceIdToJoin));
+    console.log('Attempting to join workspace:', workspaceIdentifier);
+    
+    // First try as ID
+    let workspaceDoc = await getDoc(doc(db, 'workspaces', workspaceIdentifier));
+    let workspaceId = workspaceIdentifier;
+    
+    // If not found by ID, try by name
     if (!workspaceDoc.exists()) {
+      console.log('Workspace not found by ID, searching by name...');
+      const q = query(collection(db, 'workspaces'), where('name', '==', workspaceIdentifier));
+      const querySnapshot = await getDocs(q);
+      
+      if (querySnapshot.empty) {
+        console.error('Workspace not found by ID or name:', workspaceIdentifier);
+        return false;
+      }
+      
+      workspaceDoc = querySnapshot.docs[0];
+      workspaceId = workspaceDoc.id;
+    }
+    
+    if (!workspaceDoc.exists()) {
+      console.error('Workspace does not exist:', workspaceIdentifier);
       return false;
     }
 
     const workspaceData = workspaceDoc.data();
+    console.log('Workspace found:', workspaceData);
+    console.log('Current members:', workspaceData.members);
+    
     if (!workspaceData.members.includes(user.uid)) {
-      await updateDoc(doc(db, 'workspaces', workspaceIdToJoin), {
+      console.log('Adding user to workspace members:', user.uid);
+      
+      // Store user data in Firestore users collection
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName || user.email?.split('@')[0],
+        photoURL: user.photoURL
+      }, { merge: true });
+      
+      await updateDoc(doc(db, 'workspaces', workspaceId), {
         members: arrayUnion(user.uid)
       });
+      console.log('User added to workspace members');
+    } else {
+      console.log('User already a member of workspace');
     }
 
-    setWorkspaceId(workspaceIdToJoin);
+    setWorkspaceId(workspaceId);
     setWorkspaceName(workspaceData.name || 'My Workspace');
     logActivity('joined a workspace', { workspaceName: workspaceData.name });
     
@@ -220,24 +263,6 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const fetchFiles = useCallback(async () => {
-    if (!workspaceId) return;
-    const listRef = ref(storage, `workspaces/${workspaceId}`);
-    const res = await listAll(listRef);
-    const fileData = await Promise.all(res.items.map(async (item) => ({
-      name: item.name,
-      url: await getDownloadURL(item),
-      size: 0 
-    })));
-    setFiles(fileData);
-  }, [workspaceId]);
-
-  const uploadFile = async (file) => {
-    if (!workspaceId) return;
-    await uploadBytes(ref(storage, `workspaces/${workspaceId}/${file.name}`), file);
-    fetchFiles();
-    logActivity('uploaded a file', { fileName: file.name });
-  };
 
   const logout = async () => {
     await signOut(auth);
@@ -250,12 +275,29 @@ export const AppProvider = ({ children }) => {
     if (!user) return [];
     
     try {
-      const q = query(collection(db, 'workspaces'), where('members', 'array-contains', user.uid));
-      const querySnapshot = await getDocs(q);
-      const workspaces = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      console.log('Fetching workspaces for user:', user.uid);
+      
+      // Fetch workspaces where user is a member
+      const memberQuery = query(collection(db, 'workspaces'), where('members', 'array-contains', user.uid));
+      const memberSnapshot = await getDocs(memberQuery);
+      
+      // Fetch workspaces where user is the creator
+      const creatorQuery = query(collection(db, 'workspaces'), where('createdBy', '==', user.uid));
+      const creatorSnapshot = await getDocs(creatorQuery);
+      
+      // Combine both sets of workspaces, removing duplicates
+      const allWorkspaces = new Map();
+      
+      memberSnapshot.docs.forEach(doc => {
+        allWorkspaces.set(doc.id, { id: doc.id, ...doc.data() });
+      });
+      
+      creatorSnapshot.docs.forEach(doc => {
+        allWorkspaces.set(doc.id, { id: doc.id, ...doc.data() });
+      });
+      
+      const workspaces = Array.from(allWorkspaces.values());
+      console.log('Found workspaces:', workspaces);
       setUserWorkspaces(workspaces);
       return workspaces;
     } catch (error) {
@@ -305,13 +347,7 @@ export const AppProvider = ({ children }) => {
       
       const workspaceData = workspaceDoc.data();
       
-      // If user is the creator, they should delete instead of leave
-      if (workspaceData.createdBy === user.uid) {
-        console.error('Workspace creator cannot leave, must delete instead');
-        return false;
-      }
-
-      // Remove user from members array
+      // Remove user from members array (even if they're the creator)
       const updatedMembers = workspaceData.members.filter(memberId => memberId !== user.uid);
       await updateDoc(doc(db, 'workspaces', workspaceId), {
         members: updatedMembers
@@ -329,8 +365,8 @@ export const AppProvider = ({ children }) => {
 
   const value = {
     user, loading, workspaceId, setWorkspaceId, workspaceName, currentTab, setCurrentTab,
-    todos, filter, setFilter, activity, events, files, userWorkspaces,
-    addTodo, toggleTodo, deleteTodo, editTodo, uploadFile, fetchFiles, logActivity,
+    todos, filter, setFilter, activity, events, userWorkspaces,
+    addTodo, toggleTodo, deleteTodo, editTodo, logActivity,
     createWorkspace, joinWorkspace, logout, fetchUserWorkspaces, deleteWorkspace, leaveWorkspace, updateTodoStatus
   };
 

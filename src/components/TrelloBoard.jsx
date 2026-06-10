@@ -122,15 +122,21 @@ function DroppableColumn({ id, title, todos, onDeleteTodo, onEditTodo, activeId 
 }
 
 export default function TrelloBoard() {
-  const { todos, updateTodoStatus, deleteTodo, editTodo } = useApp();
+  const { todos, updateTodoStatus, deleteTodo, editTodo, addTodo } = useApp();
   const [activeId, setActiveId] = React.useState(null);
   const [showEditModal, setShowEditModal] = React.useState(false);
+  const [showAddModal, setShowAddModal] = React.useState(false);
   const [editingTodo, setEditingTodo] = React.useState(null);
   const [editText, setEditText] = React.useState('');
   const [editAssignee, setEditAssignee] = React.useState('');
   const [editAssignees, setEditAssignees] = React.useState([]);
   const [editDueDate, setEditDueDate] = React.useState('');
   const [editDescription, setEditDescription] = React.useState('');
+  const [addText, setAddText] = React.useState('');
+  const [addAssignee, setAddAssignee] = React.useState('');
+  const [addAssignees, setAddAssignees] = React.useState([]);
+  const [addDueDate, setAddDueDate] = React.useState('');
+  const [addDescription, setAddDescription] = React.useState('');
   
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -227,10 +233,39 @@ export default function TrelloBoard() {
     }
   };
 
+  const handleAddAssigneeAdd = () => {
+    if (addAssignee.trim() && !addAssignees.includes(addAssignee.trim())) {
+      setAddAssignees([...addAssignees, addAssignee.trim()]);
+      setAddAssignee('');
+    }
+  };
+
+  const handleAddAssigneeRemove = (assigneeToRemove) => {
+    setAddAssignees(addAssignees.filter(a => a !== assigneeToRemove));
+  };
+
+  const handleSaveAdd = async () => {
+    if (addText.trim()) {
+      await addTodo(addText.trim(), addAssignees, addDueDate || null, addDescription);
+      setShowAddModal(false);
+      setAddText('');
+      setAddAssignee('');
+      setAddAssignees([]);
+      setAddDueDate('');
+      setAddDescription('');
+    }
+  };
+
   const activeTodo = todos.find(t => t.id === activeId);
 
   return (
     <div className="trello-board">
+      <div className="trello-board-header">
+        <button className="trello-add-task-btn" onClick={() => setShowAddModal(true)}>
+          + Add Task
+        </button>
+      </div>
+      
       <DndContext 
         sensors={sensors} 
         collisionDetection={closestCenter} 
@@ -381,6 +416,108 @@ export default function TrelloBoard() {
                   </button>
                   <button className="modal-btn modal-btn-confirm" onClick={handleSaveEdit}>
                     Save Changes
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Add Task Modal */}
+        {showAddModal && (
+          <div className="modal-backdrop" onClick={() => setShowAddModal(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <button className="modal-close" onClick={() => setShowAddModal(false)}>
+                ✕
+              </button>
+              
+              <div className="modal-body">
+                <h2 className="modal-title">Add New Task</h2>
+                
+                <p className="modal-message">
+                  Create a new task for your board.
+                </p>
+                
+                <input
+                  type="text"
+                  value={addText}
+                  onChange={(e) => setAddText(e.target.value)}
+                  placeholder="Task title"
+                  className="invite-email-input"
+                  autoFocus
+                />
+                
+                <div className="todo-form-fields" style={{ marginTop: '12px' }}>
+                  <div className="todo-form-field todo-form-field-assignee">
+                    <User size={16} className="todo-form-icon" />
+                    <input
+                      type="text"
+                      value={addAssignee}
+                      onChange={(e) => setAddAssignee(e.target.value)}
+                      placeholder="Assign to..."
+                      className="todo-form-input"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddAssigneeAdd();
+                        }
+                      }}
+                    />
+                    <button 
+                      type="button" 
+                      className="todo-form-add-btn"
+                      onClick={handleAddAssigneeAdd}
+                    >
+                      +
+                    </button>
+                  </div>
+                  
+                  <div className="todo-form-field">
+                    <Calendar size={16} className="todo-form-icon" />
+                    <input
+                      type="date"
+                      value={addDueDate}
+                      onChange={(e) => setAddDueDate(e.target.value)}
+                      className="todo-form-input"
+                    />
+                  </div>
+                </div>
+                
+                <div className="todo-form-field todo-form-field-description" style={{ marginTop: '12px' }}>
+                  <AlignLeft size={16} className="todo-form-icon" />
+                  <textarea
+                    value={addDescription}
+                    onChange={(e) => setAddDescription(e.target.value)}
+                    placeholder="Add a description..."
+                    className="todo-form-textarea"
+                    rows={3}
+                  />
+                </div>
+                
+                {addAssignees.length > 0 && (
+                  <div className="todo-assignees-list">
+                    {addAssignees.map((a, index) => (
+                      <div key={index} className="todo-assignee-chip">
+                        <User size={12} />
+                        <span>{a}</span>
+                        <button 
+                          type="button"
+                          onClick={() => handleAddAssigneeRemove(a)}
+                          className="todo-assignee-remove"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                <div className="modal-actions" style={{ marginTop: '16px' }}>
+                  <button className="modal-btn modal-btn-cancel" onClick={() => setShowAddModal(false)}>
+                    Cancel
+                  </button>
+                  <button className="modal-btn modal-btn-confirm" onClick={handleSaveAdd}>
+                    Add Task
                   </button>
                 </div>
               </div>

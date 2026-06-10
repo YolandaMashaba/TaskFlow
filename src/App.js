@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import './App.css';
 import { AppProvider, useApp } from './contexts/AppContext';
+import emailjs from '@emailjs/browser';
 import { 
   CheckCircle, 
   Calendar as CalendarIcon, 
@@ -11,7 +12,8 @@ import {
   Share2,
   LogOut,
   LogOut as LeaveIcon,
-  Mail
+  Mail,
+  MessageSquare
 } from 'lucide-react';
 
 // Pages
@@ -26,10 +28,11 @@ import FilterButtons from './components/FilterButtons';
 import Stats from './components/Stats';
 import ActivityFeed from './components/ActivityFeed';
 import Calendar from './components/Calendar';
-import FileShare from './components/FileShare';
 import UserList from './components/UserList';
 import AlertModal from './components/AlertModal';
 import TrelloBoard from './components/TrelloBoard';
+import Profile from './components/Profile';
+import Messages from './components/Messages';
 import { X } from 'lucide-react';
 
 function Dashboard() {
@@ -93,7 +96,7 @@ function Dashboard() {
     setShowInviteModal(true);
   };
 
-  const sendInvite = () => {
+  const sendInvite = async () => {
     if (!inviteEmail || !inviteEmail.includes('@')) {
       setAlertModal({
         isOpen: true,
@@ -107,22 +110,46 @@ function Dashboard() {
     }
 
     const shareUrl = `${window.location.origin}/workspace?workspace=${workspaceId}`;
-    const emailSubject = encodeURIComponent(`You're invited to join ${workspaceName} on TaskFlow`);
-    const emailBody = encodeURIComponent(`You've been invited to join the "${workspaceName}" workspace on TaskFlow!\n\nClick the link below to join:\n${shareUrl}\n\nIf you don't have an account yet, you'll be able to create one when you click the link.`);
     
-    window.location.href = `mailto:${inviteEmail}?subject=${emailSubject}&body=${emailBody}`;
-    
-    setInviteEmail('');
-    setShowInviteModal(false);
-    
-    setAlertModal({
-      isOpen: true,
-      type: 'success',
-      title: 'Email Client Opened',
-      message: 'Your email client has been opened with the invitation. Just send the email to invite them!',
-      confirmText: 'OK',
-      onConfirm: null
-    });
+    try {
+      // EmailJS configuration - replace with your actual credentials
+      const serviceId = 'YOUR_SERVICE_ID';
+      const templateId = 'YOUR_TEMPLATE_ID';
+      const publicKey = 'YOUR_PUBLIC_KEY';
+      
+      const templateParams = {
+        to_email: inviteEmail,
+        to_name: inviteEmail.split('@')[0],
+        from_name: user?.displayName || user?.email?.split('@')[0] || 'A TaskFlow User',
+        workspace_name: workspaceName,
+        workspace_id: workspaceId,
+        invite_link: shareUrl
+      };
+
+      await emailjs.send(serviceId, templateId, templateParams, publicKey);
+      
+      setInviteEmail('');
+      setShowInviteModal(false);
+      
+      setAlertModal({
+        isOpen: true,
+        type: 'success',
+        title: 'Invite Sent',
+        message: 'Invitation email has been sent successfully!',
+        confirmText: 'OK',
+        onConfirm: null
+      });
+    } catch (error) {
+      console.error('Error sending email:', error);
+      setAlertModal({
+        isOpen: true,
+        type: 'alert',
+        title: 'Email Failed',
+        message: 'Failed to send invitation email. Please check your EmailJS configuration or try again.',
+        confirmText: 'OK',
+        onConfirm: null
+      });
+    }
   };
 
   const handleLeaveWorkspace = async () => {
@@ -168,11 +195,14 @@ function Dashboard() {
           <li className={currentTab === 'calendar' ? 'active' : ''} onClick={() => setCurrentTab('calendar')}>
             <CalendarIcon size={20} /> <span>Calendar</span>
           </li>
-          <li className={currentTab === 'files' ? 'active' : ''} onClick={() => setCurrentTab('files')}>
-            <FileText size={20} /> <span>Files</span>
+          <li className={currentTab === 'messages' ? 'active' : ''} onClick={() => setCurrentTab('messages')}>
+            <MessageSquare size={20} /> <span>Messages</span>
           </li>
           <li className={currentTab === 'activity' ? 'active' : ''} onClick={() => setCurrentTab('activity')}>
             <Activity size={20} /> <span>Activity</span>
+          </li>
+          <li className={currentTab === 'profile' ? 'active' : ''} onClick={() => setCurrentTab('profile')}>
+            <User size={20} /> <span>Profile</span>
           </li>
         </ul>
 
@@ -210,14 +240,14 @@ function Dashboard() {
         <section className="content-body">
           {currentTab === 'todos' && (
             <div className="todo-view">
-              <TodoForm />
               <TrelloBoard />
             </div>
           )}
 
           {currentTab === 'calendar' && <Calendar />}
-          {currentTab === 'files' && <FileShare />}
+          {currentTab === 'messages' && <Messages />}
           {currentTab === 'activity' && <ActivityFeed />}
+          {currentTab === 'profile' && <Profile />}
         </section>
       </main>
 

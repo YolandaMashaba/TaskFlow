@@ -63,13 +63,16 @@ const Workspace = () => {
     setJoinLoading(true);
 
     try {
-      const success = await joinWorkspace(joinWorkspaceId || sharedWorkspaceId);
+      const workspaceId = joinWorkspaceId || sharedWorkspaceId;
+      console.log('Joining workspace with ID:', workspaceId);
+      const success = await joinWorkspace(workspaceId);
       if (success) {
         navigate('/dashboard');
       } else {
-        setJoinError('Invalid workspace ID or workspace does not exist');
+        setJoinError('Invalid workspace ID or workspace does not exist. Please check the ID and try again.');
       }
     } catch (err) {
+      console.error('Join workspace error:', err);
       setJoinError(err.message || 'Invalid workspace ID or workspace does not exist');
     } finally {
       setJoinLoading(false);
@@ -123,8 +126,14 @@ const Workspace = () => {
     }
   }, [sharedWorkspaceId, user, workspaceId]);
 
+  // Redirect to login if user is not authenticated
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
+
   if (!user) {
-    navigate('/login');
     return null;
   }
 
@@ -184,7 +193,7 @@ const Workspace = () => {
               <Users size={32} />
             </div>
             <h2>Join Existing Workspace</h2>
-            <p>Enter a workspace ID to join an existing team</p>
+            <p>Enter a workspace name or ID to join an existing team</p>
             
             <form onSubmit={handleJoinWorkspace} className="workspace-form">
               {joinError && <div className="workspace-error">{joinError}</div>}
@@ -192,7 +201,7 @@ const Workspace = () => {
                 type="text"
                 value={joinWorkspaceId}
                 onChange={(e) => setJoinWorkspaceId(e.target.value)}
-                placeholder="Enter workspace ID"
+                placeholder="Enter workspace name or ID"
                 className="workspace-input"
                 required
               />
@@ -204,9 +213,9 @@ const Workspace = () => {
           </div>
         </div>
 
-        {userWorkspaces.length > 0 && (
-          <div className="existing-workspaces">
-            <h2>Your Workspaces</h2>
+        <div className="existing-workspaces">
+          <h2>Your Workspaces</h2>
+          {userWorkspaces.length > 0 ? (
             <div className="workspaces-grid">
               {userWorkspaces.map(workspace => (
                 <div key={workspace.id} className="workspace-card" onClick={() => handleSelectWorkspace(workspace)}>
@@ -220,11 +229,17 @@ const Workspace = () => {
                   <FolderOpen size={32} className="workspace-card-icon" />
                   <h3>{workspace.name}</h3>
                   <p>ID: {workspace.id}</p>
+                  <div className="workspace-members">
+                    <Users size={14} />
+                    <span>{workspace.members?.length || 0} members</span>
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <p className="no-workspaces">No workspaces yet. Create one or join an existing workspace to get started.</p>
+          )}
+        </div>
       </div>
       
       <AlertModal
