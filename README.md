@@ -31,7 +31,8 @@ TaskFlow is a modern, collaborative workspace application designed to streamline
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone [<repository-url>](https://github.com/YolandaMashaba/TaskFlow.git)
+git clone 
 cd TaskFlow
 ```
 
@@ -90,12 +91,6 @@ The app will open at [http://localhost:3000](http://localhost:3000)
 - Click on dates to add new events
 - Drag and drop to reschedule events
 
-### File Sharing
-
-- Upload files directly to your workspace
-- Share documents and assets with team members
-- All files are stored in Firebase Storage
-
 ### Activity Feed
 
 - Track real-time activity from all team members
@@ -133,7 +128,3 @@ TaskFlow/
 - Enable email verification for user registration
 - Use environment variables for sensitive configuration in production
 - Regularly update dependencies to address security vulnerabilities
-
-## License
-
-This project is licensed under the MIT License.
