@@ -7,7 +7,7 @@ import { useApp } from '../contexts/AppContext';
 import { doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import AlertModal from './AlertModal';
-import { Calendar as CalendarIcon, Clock, User as UserIcon, AlignLeft } from 'lucide-react';
+import { Calendar as CalendarIcon } from 'lucide-react';
 
 const Calendar = () => {
   const { events, user, workspaceId, logActivity } = useApp();

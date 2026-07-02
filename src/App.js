@@ -1,19 +1,19 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import './App.css';
 import { AppProvider, useApp } from './contexts/AppContext';
 import emailjs from '@emailjs/browser';
 import { 
   CheckCircle, 
   Calendar as CalendarIcon, 
-  FileText, 
   Activity, 
   User,
   Share2,
   LogOut,
   LogOut as LeaveIcon,
   Mail,
-  MessageSquare
+  MessageSquare,
+  X
 } from 'lucide-react';
 
 // Pages
@@ -22,10 +22,6 @@ import Register from './pages/Register';
 import Workspace from './pages/Workspace';
 
 // Components
-import TodoForm from './components/TodoForm';
-import TodoList from './components/TodoList';
-import FilterButtons from './components/FilterButtons';
-import Stats from './components/Stats';
 import ActivityFeed from './components/ActivityFeed';
 import Calendar from './components/Calendar';
 import UserList from './components/UserList';
@@ -33,16 +29,13 @@ import AlertModal from './components/AlertModal';
 import TrelloBoard from './components/TrelloBoard';
 import Profile from './components/Profile';
 import Messages from './components/Messages';
-import { X } from 'lucide-react';
 
 function Dashboard() {
   const { 
     user, loading, currentTab, setCurrentTab, 
-    todos, filter, setFilter, 
-    toggleTodo, deleteTodo, editTodo, addTodo,
+    todos, filter,
     workspaceId, workspaceName, logout, leaveWorkspace
   } = useApp();
-  const location = useLocation();
   const navigate = useNavigate();
   
   // Alert modal state

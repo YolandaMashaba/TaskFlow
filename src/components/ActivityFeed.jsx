@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../contexts/AppContext';
-import { Clock, Plus, Edit, Trash, Upload, User, Calendar, CheckCircle } from 'lucide-react';
+import { Clock, Plus, Edit, Trash, Upload, User, CheckCircle } from 'lucide-react';
 
 const ActivityFeed = () => {
   const { activity } = useApp();

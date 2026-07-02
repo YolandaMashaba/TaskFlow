@@ -14,7 +14,6 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
-  arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useApp } from '../contexts/AppContext';
@@ -43,7 +42,6 @@ function SortableItem({ id, children, isDragging }) {
 }
 
 function TodoCard({ todo, onDelete, onEdit, isDragging }) {
-  const { user } = useApp();
   const assignees = Array.isArray(todo.assignees) ? todo.assignees : (todo.assignee ? [todo.assignee] : []);
   
   return (

@@ -5,7 +5,7 @@ import { Plus, Link2, Users, ArrowRight, LogOut, FolderOpen, Trash2 } from 'luci
 import AlertModal from '../components/AlertModal';
 
 const Workspace = () => {
-  const { user, workspaceId, workspaceName, createWorkspace, joinWorkspace, logout, fetchUserWorkspaces, userWorkspaces, deleteWorkspace, setWorkspaceId, setWorkspaceName } = useApp();
+  const { user, workspaceId, createWorkspace, joinWorkspace, logout, fetchUserWorkspaces, userWorkspaces, deleteWorkspace } = useApp();
   const [newWorkspaceName, setNewWorkspaceName] = useState('');
   const [joinWorkspaceId, setJoinWorkspaceId] = useState('');
   const [createLoading, setCreateLoading] = useState(false);
@@ -124,6 +124,7 @@ const Workspace = () => {
       setAutoJoinLoading(true);
       handleJoinWorkspace(null);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sharedWorkspaceId, user, workspaceId]);
 
   // Redirect to login if user is not authenticated
