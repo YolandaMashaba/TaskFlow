@@ -13,7 +13,8 @@ import {
   LogOut as LeaveIcon,
   Mail,
   MessageSquare,
-  X
+  X,
+  Menu
 } from 'lucide-react';
 
 // Pages
@@ -50,6 +51,9 @@ function Dashboard() {
   // Email invitation state
   const [inviteEmail, setInviteEmail] = React.useState('');
   const [showInviteModal, setShowInviteModal] = React.useState(false);
+  
+  // Mobile sidebar state
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = React.useState(false);
 
   if (loading) return (
     <div className="loading-screen">
@@ -65,12 +69,6 @@ function Dashboard() {
   if (!workspaceId) {
     return <Navigate to="/workspace" replace />;
   }
-
-  const filteredTodos = todos.filter(todo => {
-    if (filter === 'active') return !todo.completed;
-    if (filter === 'completed') return todo.completed;
-    return true;
-  });
 
   const shareWorkspaceLink = () => {
     const shareUrl = `${window.location.origin}/workspace?workspace=${workspaceId}`;
@@ -175,10 +173,32 @@ function Dashboard() {
 
   return (
     <div className="dashboard-container">
-      <nav className="sidebar">
+      {/* Mobile menu button */}
+      <button 
+        className="mobile-menu-btn" 
+        onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+      >
+        <Menu size={24} />
+      </button>
+      
+      {/* Mobile overlay */}
+      {isMobileSidebarOpen && (
+        <div 
+          className="mobile-overlay" 
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+      
+      <nav className={`sidebar ${isMobileSidebarOpen ? 'mobile-open' : ''}`}>
         <div className="sidebar-header">
           <h2>TaskFlow</h2>
-          <span className="workspace-name">{workspaceName}</span>
+          <span className="workspace-name">{workspaceName || 'Workspace'}</span>
+          <button 
+            className="mobile-close-btn" 
+            onClick={() => setIsMobileSidebarOpen(false)}
+          >
+            <X size={20} />
+          </button>
         </div>
         
         <ul className="nav-links">

@@ -137,6 +137,47 @@ html, body, #root {
   padding: 28px 24px;
   height: 100vh;
   overflow-y: auto;
+  transition: transform 0.3s ease-in-out;
+  z-index: 1000;
+}
+
+/* Mobile Menu Button */
+.mobile-menu-btn {
+  display: none;
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 1001;
+  background: var(--accent-blue);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Mobile Overlay */
+.mobile-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+/* Mobile Close Button */
+.mobile-close-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 8px;
+  margin-left: auto;
 }
 
 .sidebar-header h2 {
@@ -227,7 +268,7 @@ html, body, #root {
 /* --- Main Content (Center) --- */
 .main-content {
   background-color: var(--white);
-  margin: 20px;
+  margin: 10px 10px 10px 20px;
   border-radius: 16px;
   box-shadow: var(--shadow);
   display: flex;
@@ -634,7 +675,7 @@ button {
   .dashboard-container {
     grid-template-columns: 80px 1fr;
   }
-  .presence-panel, .nav-links li span, .sidebar-header h2 {
+  .presence-panel {
     display: none;
   }
 }
@@ -2616,6 +2657,118 @@ button {
   .join-shared-btn {
     margin-left: 0;
     width: 100%;
+  }
+}
+
+/* --- Mobile Responsive Styles --- */
+@media (max-width: 768px) {
+  .mobile-menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .mobile-overlay {
+    display: block;
+  }
+  
+  .mobile-close-btn {
+    display: block;
+  }
+  
+  .sidebar {
+    position: fixed;
+    left: -280px;
+    top: 0;
+    width: 280px;
+    height: 100vh;
+    padding: 20px 16px;
+  }
+  
+  .sidebar.mobile-open {
+    padding-top: 50px;
+    transform: translateX(280px);
+  }
+  
+  .dashboard-container {
+    display: block;
+  }
+  
+  .main-content {
+    margin: 0;
+    border-radius: 0;
+  }
+  
+  .content-header {
+    padding: 6px 8px;
+  }
+  
+  .content-header h1 {
+    font-size: 0.9rem;
+  }
+  
+  .content-body {
+    padding: 6px 8px;
+  }
+  
+  .right-sidebar {
+    display: none;
+  }
+  
+  .workspaces-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .trello-board {
+    overflow-x: auto;
+  }
+  
+  .trello-column {
+    min-width: 180px;
+    padding: 3px;
+  }
+  
+  .trello-card {
+    padding: 3px;
+  }
+  
+  .workspace-card {
+    padding: 6px;
+  }
+  
+  .workspace-option {
+    padding: 8px;
+  }
+  
+  .nav-links li {
+    padding: 4px 6px;
+    font-size: 0.7rem;
+  }
+  
+  .sidebar-header h2 {
+    font-size: 0.95rem;
+  }
+  
+  .sidebar-header {
+    margin-bottom: 6px;
+  }
+  
+  .nav-links {
+    gap: 2px;
+  }
+  
+  .sidebar {
+    padding: 16px 12px;
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard-container {
+    grid-template-columns: 280px 1fr;
+  }
+  
+  .right-sidebar {
+    display: none;
   }
 }
 
