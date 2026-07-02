@@ -2,16 +2,14 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import './App.css';
 import { AppProvider, useApp } from './contexts/AppContext';
-import emailjs from '@emailjs/browser';
-import { 
-  CheckCircle, 
-  Calendar as CalendarIcon, 
-  Activity, 
+import {
+  CheckCircle,
+  Calendar as CalendarIcon,
+  Activity,
   User,
   Share2,
   LogOut,
   LogOut as LeaveIcon,
-  Mail,
   MessageSquare,
   X,
   Menu
@@ -32,10 +30,15 @@ import Profile from './components/Profile';
 import Messages from './components/Messages';
 
 function Dashboard() {
-  const { 
-    user, loading, currentTab, setCurrentTab, 
-    todos, filter,
-    workspaceId, workspaceName, logout, leaveWorkspace
+  const {
+    user,
+    loading,
+    currentTab,
+    setCurrentTab,
+    workspaceId,
+    workspaceName,
+    logout,
+    leaveWorkspace,
   } = useApp();
   const navigate = useNavigate();
   
@@ -48,9 +51,7 @@ function Dashboard() {
     onConfirm: null
   });
   
-  // Email invitation state
-  const [inviteEmail, setInviteEmail] = React.useState('');
-  const [showInviteModal, setShowInviteModal] = React.useState(false);
+
   
   // Mobile sidebar state
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = React.useState(false);
@@ -83,65 +84,7 @@ function Dashboard() {
     });
   };
 
-  const handleInviteByEmail = () => {
-    setShowInviteModal(true);
-  };
 
-  const sendInvite = async () => {
-    if (!inviteEmail || !inviteEmail.includes('@')) {
-      setAlertModal({
-        isOpen: true,
-        type: 'alert',
-        title: 'Invalid Email',
-        message: 'Please enter a valid email address.',
-        confirmText: 'OK',
-        onConfirm: null
-      });
-      return;
-    }
-
-    const shareUrl = `${window.location.origin}/workspace?workspace=${workspaceId}`;
-    
-    try {
-      // EmailJS configuration - replace with your actual credentials
-      const serviceId = 'YOUR_SERVICE_ID';
-      const templateId = 'YOUR_TEMPLATE_ID';
-      const publicKey = 'YOUR_PUBLIC_KEY';
-      
-      const templateParams = {
-        to_email: inviteEmail,
-        to_name: inviteEmail.split('@')[0],
-        from_name: user?.displayName || user?.email?.split('@')[0] || 'A TaskFlow User',
-        workspace_name: workspaceName,
-        workspace_id: workspaceId,
-        invite_link: shareUrl
-      };
-
-      await emailjs.send(serviceId, templateId, templateParams, publicKey);
-      
-      setInviteEmail('');
-      setShowInviteModal(false);
-      
-      setAlertModal({
-        isOpen: true,
-        type: 'success',
-        title: 'Invite Sent',
-        message: 'Invitation email has been sent successfully!',
-        confirmText: 'OK',
-        onConfirm: null
-      });
-    } catch (error) {
-      console.error('Error sending email:', error);
-      setAlertModal({
-        isOpen: true,
-        type: 'alert',
-        title: 'Email Failed',
-        message: 'Failed to send invitation email. Please check your EmailJS configuration or try again.',
-        confirmText: 'OK',
-        onConfirm: null
-      });
-    }
-  };
 
   const handleLeaveWorkspace = async () => {
     const success = await leaveWorkspace();
@@ -224,10 +167,7 @@ function Dashboard() {
             <Share2 size={16} />
             <span>Share Workspace</span>
           </button>
-          <button onClick={handleInviteByEmail} className="sidebar-action-btn">
-            <Mail size={16} />
-            <span>Invite by Email</span>
-          </button>
+
           <button onClick={handleLeaveWorkspaceConfirm} className="sidebar-action-btn">
             <LeaveIcon size={16} />
             <span>Leave Workspace</span>
@@ -279,42 +219,7 @@ function Dashboard() {
         cancelText={alertModal.cancelText}
       />
       
-      {showInviteModal && (
-        <div className="modal-backdrop" onClick={() => setShowInviteModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowInviteModal(false)}>
-              <X size={20} />
-            </button>
-            
-            <div className="modal-body">
-              <Mail size={48} className="modal-icon" />
-              
-              <h2 className="modal-title">Invite by Email</h2>
-              
-              <p className="modal-message">
-                Enter the email address of the person you want to invite to this workspace.
-              </p>
-              
-              <input
-                type="email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="Enter email address"
-                className="invite-email-input"
-              />
-              
-              <div className="modal-actions">
-                <button className="modal-btn modal-btn-cancel" onClick={() => setShowInviteModal(false)}>
-                  Cancel
-                </button>
-                <button className="modal-btn modal-btn-confirm" onClick={sendInvite}>
-                  Send Invite
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }

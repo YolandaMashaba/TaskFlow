@@ -1243,21 +1243,7 @@ button {
   background: #1d4ed8;
 }
 
-.invite-email-input {
-  width: 100%;
-  padding: 14px 16px;
-  border: 2px solid var(--border);
-  border-radius: var(--radius);
-  font-size: 1rem;
-  margin-bottom: 24px;
-  transition: 0.2s;
-}
 
-.invite-email-input:focus {
-  outline: none;
-  border-color: var(--accent-blue);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
 
 /* --- Trello Board Styling --- */
 .trello-board {
