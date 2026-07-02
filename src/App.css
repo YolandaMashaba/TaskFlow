@@ -15,6 +15,96 @@
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
+/* Dark Theme */
+[data-theme="dark"] {
+  --bg-workspace: #0f172a;
+  --sidebar-dark: #1e293b;
+  --accent-blue: #3b82f6;
+  --accent-green: #22c55e;
+  --accent-green-hover: #16a34a;
+  --accent-teal: #2dd4bf;
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+  --white: #1e293b;
+  --border: #334155;
+  --success: #22c55e;
+}
+
+/* Ocean Theme */
+[data-theme="ocean"] {
+  --bg-workspace: #f0f9ff;
+  --sidebar-dark: #0c4a6e;
+  --accent-blue: #0ea5e9;
+  --accent-green: #06b6d4;
+  --accent-green-hover: #0891b2;
+  --accent-teal: #14b8a6;
+  --text-main: #0c4a6e;
+  --text-muted: #0369a1;
+  --white: #ffffff;
+  --border: #bae6fd;
+  --success: #06b6d4;
+}
+
+/* Forest Theme */
+[data-theme="forest"] {
+  --bg-workspace: #f0fdf4;
+  --sidebar-dark: #14532d;
+  --accent-blue: #15803d;
+  --accent-green: #16a34a;
+  --accent-green-hover: #15803d;
+  --accent-teal: #059669;
+  --text-main: #14532d;
+  --text-muted: #166534;
+  --white: #ffffff;
+  --border: #bbf7d0;
+  --success: #16a34a;
+}
+
+/* Sunset Theme */
+[data-theme="sunset"] {
+  --bg-workspace: #fff7ed;
+  --sidebar-dark: #7c2d12;
+  --accent-blue: #ea580c;
+  --accent-green: #f97316;
+  --accent-green-hover: #ea580c;
+  --accent-teal: #f59e0b;
+  --text-main: #7c2d12;
+  --text-muted: #9a3412;
+  --white: #ffffff;
+  --border: #fed7aa;
+  --success: #f97316;
+}
+
+/* Pink Theme */
+[data-theme="pink"] {
+  --bg-workspace: #fdf2f8;
+  --sidebar-dark: #831843;
+  --accent-blue: #db2777;
+  --accent-green: #ec4899;
+  --accent-green-hover: #db2777;
+  --accent-teal: #f472b6;
+  --text-main: #831843;
+  --text-muted: #9d174d;
+  --white: #ffffff;
+  --border: #fbcfe8;
+  --success: #ec4899;
+}
+
+/* Purple Theme */
+[data-theme="purple"] {
+  --bg-workspace: #faf5ff;
+  --sidebar-dark: #581c87;
+  --accent-blue: #7c3aed;
+  --accent-green: #8b5cf6;
+  --accent-green-hover: #7c3aed;
+  --accent-teal: #a78bfa;
+  --text-main: #581c87;
+  --text-muted: #6b21a8;
+  --white: #ffffff;
+  --border: #e9d5ff;
+  --success: #8b5cf6;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -2315,6 +2405,76 @@ button {
 .member-email {
   font-size: 0.8rem;
   color: var(--text-muted);
+}
+
+/* --- Theme Selector Styling --- */
+.theme-selector {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.theme-selector-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.theme-selector-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.theme-selector-header svg {
+  color: var(--accent-blue);
+}
+
+.theme-options {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 12px;
+}
+
+.theme-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 8px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: var(--white);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.theme-option:hover {
+  border-color: var(--accent-blue);
+  transform: translateY(-2px);
+}
+
+.theme-option.active {
+  border-color: var(--accent-blue);
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.theme-preview {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.theme-option span {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-main);
 }
 
 .user-list ul {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { User, Mail, Phone, Camera, Edit2, Save, X } from 'lucide-react';
+import ThemeSelector from './ThemeSelector';
 
 const Profile = () => {
   const { user, profile, updateProfile } = useApp();
@@ -171,6 +172,8 @@ const Profile = () => {
             )}
           </div>
         </div>
+
+        <ThemeSelector />
 
         <div className="profile-actions">
           {isEditing ? (
