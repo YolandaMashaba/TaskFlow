@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { auth } from '../firebase';
 import { LogIn, Mail, Lock, ArrowRight } from 'lucide-react';
+
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -10,15 +11,24 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const sharedWorkspaceId = searchParams.get('workspace');
 
   const handleSubmit = async (e) => {
+
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate('/dashboard');
+      if (sharedWorkspaceId) {
+        navigate(`/workspace?workspace=${sharedWorkspaceId}`);
+      } else {
+        navigate('/dashboard');
+      }
+
     } catch (err) {
       setError(err.message);
       setLoading(false);

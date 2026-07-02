@@ -3,11 +3,16 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import { Plus, Link2, Users, ArrowRight, LogOut, FolderOpen, Trash2 } from 'lucide-react';
 import AlertModal from '../components/AlertModal';
+import { db } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
+
 
 const Workspace = () => {
   const { user, workspaceId, createWorkspace, joinWorkspace, logout, fetchUserWorkspaces, userWorkspaces, deleteWorkspace } = useApp();
   const [newWorkspaceName, setNewWorkspaceName] = useState('');
   const [joinWorkspaceId, setJoinWorkspaceId] = useState('');
+  const [invitedWorkspaceName, setInvitedWorkspaceName] = useState('');
+
   const [createLoading, setCreateLoading] = useState(false);
   const [joinLoading, setJoinLoading] = useState(false);
   const [autoJoinLoading, setAutoJoinLoading] = useState(false);
@@ -27,6 +32,30 @@ const Workspace = () => {
 
   // Check if user is coming from a shared link
   const sharedWorkspaceId = searchParams.get('workspace');
+
+  // Load invited workspace name to show invite banner
+  useEffect(() => {
+    const loadInvitedWorkspaceName = async () => {
+      if (!sharedWorkspaceId) return;
+
+      try {
+        const workspaceDoc = await getDoc(doc(db, 'workspaces', sharedWorkspaceId));
+        if (workspaceDoc.exists()) {
+          const data = workspaceDoc.data();
+          setInvitedWorkspaceName(data?.name || 'My Workspace');
+        } else {
+          setInvitedWorkspaceName('');
+        }
+      } catch (e) {
+        setInvitedWorkspaceName('');
+      }
+    };
+
+    loadInvitedWorkspaceName();
+  }, [sharedWorkspaceId]);
+
+
+
 
   // Fetch user's workspaces on mount
   useEffect(() => {
@@ -65,8 +94,13 @@ const Workspace = () => {
     try {
       const workspaceId = joinWorkspaceId || sharedWorkspaceId;
       console.log('Joining workspace with ID:', workspaceId);
+
       const success = await joinWorkspace(workspaceId);
       if (success) {
+        // after joinWorkspace, AppContext has updated workspaceName; show it in banner
+        // (invitedWorkspaceName will be used only on the banner screen)
+        // We cannot read AppContext workspaceName here without extending context,
+        // so we update by using joinWorkspaceId/name via query below on shared-link joins.
         navigate('/dashboard');
       } else {
         setJoinError('Invalid workspace ID or workspace does not exist. Please check the ID and try again.');
@@ -79,6 +113,7 @@ const Workspace = () => {
       setAutoJoinLoading(false);
     }
   };
+
 
   const handleSelectWorkspace = async (workspace) => {
     const success = await joinWorkspace(workspace.id);
@@ -130,13 +165,18 @@ const Workspace = () => {
   // Redirect to login if user is not authenticated
   useEffect(() => {
     if (!user) {
-      navigate('/login');
+      if (sharedWorkspaceId) {
+        navigate(`/login?workspace=${sharedWorkspaceId}`, { replace: true });
+      } else {
+        navigate('/login', { replace: true });
+      }
     }
-  }, [user, navigate]);
+  }, [user, navigate, sharedWorkspaceId]);
 
   if (!user) {
     return null;
   }
+
 
   return (
     <div className="workspace-container">
@@ -152,10 +192,13 @@ const Workspace = () => {
         {sharedWorkspaceId && !workspaceId && (
           <div className="shared-workspace-banner">
             <Link2 size={24} />
-            <div>
-              <h3>You've been invited to join a workspace!</h3>
-              <p>Click below to join the collaborative workspace</p>
+              <div>
+              <h3>{invitedWorkspaceName ? 'You have been invited to join the workspace' : "You've been invited to join a workspace!"}</h3>
+              <p>
+                {invitedWorkspaceName ? `Workspace: ${invitedWorkspaceName}` : 'Click below to join the collaborative workspace'}
+              </p>
             </div>
+
             <button onClick={() => handleJoinWorkspace(null)} className="join-shared-btn" disabled={joinLoading || autoJoinLoading}>
               {joinLoading || autoJoinLoading ? 'Joining...' : 'Join Workspace'}
               <ArrowRight size={20} />
